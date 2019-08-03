@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".test.MainActivity">
+
+    <ScrollView
+        android:id="@+id/scrollView2"
+        android:layout_width="match_parent"
+        android:layout_height="250dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="8dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/text_display"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:text="Info"
+                android:textAlignment="center"
+                android:textSize="16sp"
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintRight_toRightOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+        </LinearLayout>
+    </ScrollView>
+
+    <ScrollView
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="24dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/scrollView2">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TableLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:gravity="center|center_horizontal|center_vertical"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/scrollView2">
+
+                <TableRow
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:gravity="center"
+                        android:orientation="horizontal">
+
+                        <Button
+                            android:id="@+id/info_bt"
+                            android:layout_width="wrap_content"
+                            android:layout_height="70dp"
+                            android:onClick="getDeviceInfo"
+                            android:text="Device Info"
+                            tools:layout_editor_absoluteX="118dp"
+                            tools:layout_editor_absoluteY="139dp" />
+
+                    </LinearLayout>
+
+                </TableRow>
+
+                <TableRow
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:orientation="horizontal">
+
+                        <Button
+                            android:id="@+id/button"
+                            android:layout_width="wrap_content"
+                            android:layout_height="70dp"
+                            android:layout_weight="1"
+                            android:onClick="getCPU"
+                            android:text="CPU" />
+
+                        <Button
+                            android:id="@+id/ram_bt"
+                            android:layout_width="wrap_content"
+                            android:layout_height="70dp"
+                            android:onClick="getRAM"
+                            android:text="RAM Available" />
+
+                        <Button
+                            android:id="@+id/heap_bt"
+                            android:layout_width="wrap_content"
+                            android:layout_height="70dp"
+                            android:onClick="getHeap"
+                            android:text="Heap Available" />
+                    </LinearLayout>
+                </TableRow>
+
+                <TableRow
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:gravity="center|center_horizontal|center_vertical"
+                        android:orientation="horizontal">
+
+                        <Button
+                            android:id="@+id/ui_button"
+                            android:layout_width="wrap_content"
+                            android:layout_height="70dp"
+                            android:layout_weight="1"
+                            android:onClick="getUI"
+                            android:text="UI" />
+
+                        <Button
+                            android:id="@+id/viewInfo_button"
+                            android:layout_width="wrap_content"
+                            android:layout_height="70dp"
+                            android:layout_weight="1"
+                            android:onClick="viewInfo"
+                            android:text="View Info" />
+                    </LinearLayout>
+                </TableRow>
+
+                <TableRow
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:orientation="horizontal">
+
+                        <Button
+                            android:id="@+id/button6"
+                            android:layout_width="wrap_content"
+                            android:layout_height="70dp"
+                            android:layout_weight="1"
+                            android:onClick="clearLog"
+                            android:text="Clear Log" />
+
+                        <Button
+                            android:id="@+id/button3"
+                            android:layout_width="wrap_content"
+                            android:layout_height="70dp"
+                            android:layout_weight="1"
+                            android:onClick="getLog"
+                            android:text="Log" />
+                    </LinearLayout>
+                </TableRow>
+
+                <TableRow
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:gravity="center|center_horizontal|center_vertical"
+                        android:orientation="horizontal">
+
+                        <Button
+                            android:id="@+id/button4"
+                            android:layout_width="wrap_content"
+                            android:layout_height="70dp"
+                            android:layout_weight="1"
+                            android:onClick="goToActivity1"
+                            android:text="Activity1" />
+
+                        <Button
+                            android:id="@+id/button5"
+                            android:layout_width="wrap_content"
+                            android:layout_height="70dp"
+                            android:layout_weight="1"
+                            android:onClick="getIntents"
+                            android:text="Intents" />
+                    </LinearLayout>
+                </TableRow>
+            </TableLayout>
+        </LinearLayout>
+    </ScrollView>
+
+</android.support.constraint.ConstraintLayout>
