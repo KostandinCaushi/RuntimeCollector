@@ -94,8 +94,10 @@ public class ServiceThread implements Runnable {
     // the TAG = passed TAG string
     public void getView(String tag) {
 
-        if (!viewMap.containsKey (tag)) {
+        if (viewMap != null && !viewMap.containsKey (tag)) {
             viewMap.put (tag, viewInfo ());
+
+            System.out.println ("Saved new view : " + tag);
         }
     }
 
@@ -188,7 +190,7 @@ public class ServiceThread implements Runnable {
 
 
     private void getRAM() {
-        test = ("Total RAM : "+(float)Math.round (getAvailableMemory().totalMem/1048576/100)/10+" GB\n"
+        String test = ("Total RAM : "+(float)Math.round (getAvailableMemory().totalMem/1048576/100)/10+" GB\n"
                 +"Available RAM : "+(float)Math.round (getAvailableMemory().availMem/1048576)/1000+" GB\n"
                 +"LowMemory RAM : " +getAvailableMemory ().lowMemory +"\n"
                 +"Threshold RAM : "+(float)Math.round (getAvailableMemory().threshold/1048576)/1000+" GB\n");
@@ -213,7 +215,7 @@ public class ServiceThread implements Runnable {
         final long usedMemInMB=(runtime.totalMemory() - runtime.freeMemory()) / 1048576L;
         final long maxHeapSizeInMB=runtime.maxMemory() / 1048576L;
         final long availHeapSizeInMB = maxHeapSizeInMB - usedMemInMB;
-        test = ("Available HEAP : " + (float)availHeapSizeInMB/1000 +" GB\n"
+        String test = ("Available HEAP : " + (float)availHeapSizeInMB/1000 +" GB\n"
                 +"Used HEAP : " + (float) usedMemInMB/1000 +" GB\n"
                 +"MaxAvailable HEAP : " + (float) maxHeapSizeInMB/1000 +" GB\n");
 
@@ -224,7 +226,7 @@ public class ServiceThread implements Runnable {
 
 
     private void getUI() {
-        test = (
+        String test = (
                 "Density : " + context.getResources().getDisplayMetrics().density + " - " + getDensityName (context) + "\n"
                         + "Density Dpi : " + context.getResources ().getDisplayMetrics ().densityDpi + "\n"
                         + "Width : " + context.getResources ().getDisplayMetrics ().widthPixels + "px - "

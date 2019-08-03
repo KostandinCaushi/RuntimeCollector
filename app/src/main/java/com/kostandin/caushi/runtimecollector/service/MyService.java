@@ -11,9 +11,7 @@ import android.os.IBinder;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
-import java.lang.reflect.Type;
 import java.util.HashMap;
-import java.util.Map;
 
 public class MyService extends Service {
 
@@ -21,6 +19,7 @@ public class MyService extends Service {
     Context currentContext;
 
     // Utils
+    private final static String NOT_SUCCEED = "Not succeed";
     private final static String VIEW_PREF = "viewData";
     private final static String STRING_MAP = "stringMap";
     private SharedPreferences viewSharedPrefs;
@@ -65,9 +64,14 @@ public class MyService extends Service {
 
         if (viewSharedPrefs != null) {
             Gson gson = new Gson ();
-            String storedMapString = viewSharedPrefs.getString (STRING_MAP, "Not succeed");
-            viewsMap = gson.fromJson (storedMapString, new TypeToken<HashMap<String, String>> (){}.getType ());
+            String storedMapString = viewSharedPrefs.getString (STRING_MAP, NOT_SUCCEED);
+            if (!storedMapString.equals (NOT_SUCCEED)) {
+                viewsMap = gson.fromJson (storedMapString, new TypeToken<HashMap<String, String>> () {
+                }.getType ());
+            }
         }
+
+        System.out.println ("VIEW MAP LOADED");
     }
 
     private void saveViewMap() {
@@ -81,6 +85,8 @@ public class MyService extends Service {
             editor.putString (STRING_MAP, storedMapString);
             editor.apply ();
         }
+
+        System.out.println ("VIEW MAP SAVED");
     }
 
 
@@ -95,11 +101,14 @@ public class MyService extends Service {
     // @param tag = tag assigned to that view
     public void getView(String tag) {
 
-        if (!viewsMap.containsKey (tag)) {
+        if (viewsMap != null && !viewsMap.containsKey (tag)) {
             serviceThread.getView (tag);
             viewsMap.put (tag, "");
             saveViewMap ();
+            return;
         }
+
+        System.out.println ("VIEW ALREADY PRESENT");
     }
 
     // Report Object Value
