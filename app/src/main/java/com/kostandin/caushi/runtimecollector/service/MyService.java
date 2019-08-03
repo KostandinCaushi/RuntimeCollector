@@ -4,13 +4,27 @@ package com.kostandin.caushi.runtimecollector.service;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Binder;
 import android.os.IBinder;
+
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+
+import java.lang.reflect.Type;
+import java.util.HashMap;
+import java.util.Map;
 
 public class MyService extends Service {
 
     ServiceThread serviceThread;
     Context currentContext;
+
+    // Utils
+    private final static String VIEW_PREF = "viewData";
+    private final static String STRING_MAP = "stringMap";
+    private SharedPreferences viewSharedPrefs;
+    private HashMap<String, String> viewsMap;
 
 
     private final IBinder myBinder = new LocalBinder();
@@ -28,8 +42,12 @@ public class MyService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
 
+        loadViewMap ();
+
         this.serviceThread = new ServiceThread (this);
         new Thread(serviceThread).start();
+
+        serviceThread.setViewMap (viewsMap);
         return Service.START_STICKY;
     }
 
@@ -41,6 +59,31 @@ public class MyService extends Service {
     }
 
 
+    private void loadViewMap() {
+
+        viewSharedPrefs = getSharedPreferences (VIEW_PREF, Context.MODE_PRIVATE);
+
+        if (viewSharedPrefs != null) {
+            Gson gson = new Gson ();
+            String storedMapString = viewSharedPrefs.getString (STRING_MAP, "Not succeed");
+            viewsMap = gson.fromJson (storedMapString, new TypeToken<HashMap<String, String>> (){}.getType ());
+        }
+    }
+
+    private void saveViewMap() {
+
+        viewSharedPrefs = getSharedPreferences (VIEW_PREF, Context.MODE_PRIVATE);
+
+        if (viewSharedPrefs != null) {
+            Gson gson = new Gson ();
+            String storedMapString = gson.toJson (viewsMap);
+            SharedPreferences.Editor editor = viewSharedPrefs.edit ();
+            editor.putString (STRING_MAP, storedMapString);
+            editor.apply ();
+        }
+    }
+
+
     // Set Context when activity changes
     public void setCurrentContext(Context currentContext) {
 
@@ -49,16 +92,14 @@ public class MyService extends Service {
     }
 
     // Get View info, when fragments or other things inside an activity changes
-    // the TAG = hashcode
-    public void getView() {
-        // TODO convert to hash
-        // serviceThread.getView (tag);
-    }
-
-    // Get View info, when fragments or other things inside an activity changes
-    // the TAG = passed TAG string
+    // @param tag = tag assigned to that view
     public void getView(String tag) {
-        serviceThread.getView (tag);
+
+        if (!viewsMap.containsKey (tag)) {
+            serviceThread.getView (tag);
+            viewsMap.put (tag, "");
+            saveViewMap ();
+        }
     }
 
     // Report Object Value

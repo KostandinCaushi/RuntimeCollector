@@ -28,9 +28,9 @@ public class ServiceThread implements Runnable {
     private String deviceInfo;
 
     // Maps For Data Collected
-    private Map<String, String> obajectValuesMap;
-    private Map<String, String> viewsMap;
-    private Map<String, String> logTagsMap;
+    private HashMap<String, String> obajectValuesMap;
+    private HashMap<String, String> viewMap;
+    private HashMap<String, String> logTagsMap;
 
 
 
@@ -40,8 +40,6 @@ public class ServiceThread implements Runnable {
 
     @Override
     public void run() {
-
-        // TODO : load viewMap from Preferences
 
         // First Step get Device Info
         deviceInfo = getDeviceInfo ();
@@ -86,14 +84,18 @@ public class ServiceThread implements Runnable {
         System.out.println ("Context set to ServiceThread");
     }
 
+    public void setViewMap(HashMap<String, String> viewMap) {
+
+        this.viewMap = viewMap;
+    }
+
 
     // Get View info, when fragments or other things inside an activity changes
     // the TAG = passed TAG string
     public void getView(String tag) {
 
-        if (!viewsMap.containsKey (tag)) {
-
-            viewsMap.put (tag, viewInfo ());
+        if (!viewMap.containsKey (tag)) {
+            viewMap.put (tag, viewInfo ());
         }
     }
 
