@@ -26,12 +26,18 @@ public class ServiceThread implements Runnable {
 
     // Utils
     private String deviceInfo;
+    private String uiInfo;
 
     // Maps For Data Collected
-    private HashMap<String, String> obajectValuesMap;
-    private HashMap<String, String> viewMap;
-    private HashMap<String, String> logTagsMap;
+    private HashMap<String, String> obajectValuesMap = new HashMap<> ();
+    private HashMap<String, String> logTagsMap = new HashMap<> ();
 
+    // Maps fot Methods and UI
+    private HashMap<String, String> viewMap = new HashMap<> ();
+        // Contains also touchMethods
+    private HashMap<String, String> methodsMap = new HashMap<> ();
+    private HashMap<String, String> touchMethodsMap = new HashMap<> ();
+    private HashMap<String, String> methodsAndViewMap = new HashMap<> ();
 
 
     ServiceThread(MyService myService){
@@ -41,8 +47,9 @@ public class ServiceThread implements Runnable {
     @Override
     public void run() {
 
-        // First Step get Device Info
+        // First Step get Device Info & UI Info
         deviceInfo = getDeviceInfo ();
+        uiInfo = getUI ();
 
 
         while (true) {
@@ -89,6 +96,12 @@ public class ServiceThread implements Runnable {
         this.viewMap = viewMap;
     }
 
+    public boolean isPhoneLocked() {
+        return false;
+    }
+
+
+
 
     // Get View info, when fragments or other things inside an activity changes
     // the TAG = passed TAG string
@@ -96,6 +109,7 @@ public class ServiceThread implements Runnable {
 
         if (viewMap != null && !viewMap.containsKey (tag)) {
             viewMap.put (tag, viewInfo ());
+            methodsAndViewMap.put (tag, viewInfo ());
 
             System.out.println ("Saved new view : " + tag);
         }
@@ -110,23 +124,17 @@ public class ServiceThread implements Runnable {
     }
 
 
-    public void calledMethod(String TAG, String method) {
-
-
+    public void calledMethod(String tag, String method) {
+        methodsMap.put (tag, method);
+        methodsAndViewMap.put (tag, method);
     }
 
 
-    public boolean isPhoneLocked() {
-        return false;
+    public void calledTouchMethod(String tag, String method) {
+        touchMethodsMap.put (tag, method);
+        methodsMap.put (tag, method);
+        methodsAndViewMap.put (tag, method);
     }
-
-
-
-
-
-
-
-
 
 
     private String getDeviceInfo() {
@@ -153,7 +161,7 @@ public class ServiceThread implements Runnable {
     }
 
 
-
+    // TODO
     private String getCPU() {
         try {
             java.lang.Process process = Runtime.getRuntime().exec("ps");
@@ -188,7 +196,7 @@ public class ServiceThread implements Runnable {
     }
 
 
-
+    // TODO
     private void getRAM() {
         String test = ("Total RAM : "+(float)Math.round (getAvailableMemory().totalMem/1048576/100)/10+" GB\n"
                 +"Available RAM : "+(float)Math.round (getAvailableMemory().availMem/1048576)/1000+" GB\n"
@@ -209,7 +217,7 @@ public class ServiceThread implements Runnable {
     }
 
 
-
+    // TODO
     private void getHeap() {
         final Runtime runtime = Runtime.getRuntime();
         final long usedMemInMB=(runtime.totalMemory() - runtime.freeMemory()) / 1048576L;
@@ -224,9 +232,9 @@ public class ServiceThread implements Runnable {
     }
 
 
-
-    private void getUI() {
-        String test = (
+    // UI info : density, resolution
+    private String getUI() {
+        String content = (
                 "Density : " + context.getResources().getDisplayMetrics().density + " - " + getDensityName (context) + "\n"
                         + "Density Dpi : " + context.getResources ().getDisplayMetrics ().densityDpi + "\n"
                         + "Width : " + context.getResources ().getDisplayMetrics ().widthPixels + "px - "
@@ -234,6 +242,8 @@ public class ServiceThread implements Runnable {
                         + "Height : " + (context.getResources ().getDisplayMetrics ().heightPixels + getNavigationBarHeight ()) + "px - "
                         + (context.getResources ().getDisplayMetrics ().heightPixels + getNavigationBarHeight ()) / context.getResources().getDisplayMetrics().density + "dp\n"
         );
+
+        return content;
     }
     private static String getDensityName(Context context) {
         float density = context.getResources().getDisplayMetrics().density;
@@ -337,8 +347,6 @@ public class ServiceThread implements Runnable {
             StringBuilder log=new StringBuilder();
             String line = "";
 
-            logTagsMap = new HashMap<> ();
-
             while ((line = bufferedReader.readLine()) != null) {
 
                 log.append (line);
@@ -363,7 +371,7 @@ public class ServiceThread implements Runnable {
 
 
 
-    // Get intents
+    // TODO
     private void getIntents() {
 
         // TODO : build a Broadcast Receiver

@@ -121,8 +121,11 @@ public class MyService extends Service {
         serviceThread.reportObjectVal (tag, o.toString ());
     }
 
-    public void calledMethod(String TAG, String method) {
+    public void calledMethod(String tag, String method) {
+        serviceThread.calledMethod (tag, method);
+    }
 
-
+    public void calledTouchMethod(String tag, String method) {
+        serviceThread.calledTouchMethod (tag, method);
     }
 }

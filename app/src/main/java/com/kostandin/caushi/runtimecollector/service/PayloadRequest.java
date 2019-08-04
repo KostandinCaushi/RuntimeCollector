@@ -1,6 +1,5 @@
 package com.kostandin.caushi.runtimecollector.service;
 
-import java.util.HashMap;
 import java.util.Map;
 
 public class PayloadRequest {
@@ -8,6 +7,7 @@ public class PayloadRequest {
 
     // Device Info
     private String deviceInfo;
+    private String uiInfo;
 
     // LOGS
     private String log;
@@ -28,6 +28,14 @@ public class PayloadRequest {
         this.deviceInfo = deviceInfo;
     }
 
+    public String getUiInfo() {
+        return uiInfo;
+    }
+
+    public void setUiInfo(String uiInfo) {
+        this.uiInfo = uiInfo;
+    }
+
     public String getLog() {
         return log;
     }
@@ -42,5 +50,13 @@ public class PayloadRequest {
 
     public void setLogTags(Map<String, String> logTags) {
         this.logTags = logTags;
+    }
+
+    public Map<String, String> getObajectValuesMap() {
+        return obajectValuesMap;
+    }
+
+    public void setObajectValuesMap(Map<String, String> obajectValuesMap) {
+        this.obajectValuesMap = obajectValuesMap;
     }
 }
