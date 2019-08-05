@@ -115,14 +115,16 @@ public class MyService extends Service {
     public void reportObjectVal(Object o) {
         serviceThread.reportObjectVal (o.getClass ().toString (), o.toString ());
     }
-
     // Report Object Value with TAG
     public void reportObjectVal(Object o, String tag) {
         serviceThread.reportObjectVal (tag, o.toString ());
     }
 
-    public void calledMethod(String tag, String method) {
-        serviceThread.calledMethod (tag, method);
+    public void calledMethod(String tag, String methodData) {
+        serviceThread.calledMethod (tag, methodData);
+    }
+    public void calledMethod(String tag) {
+        serviceThread.calledMethod (tag);
     }
 
     public void calledTouchMethod(String tag, String method) {

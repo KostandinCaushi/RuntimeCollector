@@ -2,20 +2,33 @@ package com.kostandin.caushi.runtimecollector.service;
 
 import android.app.Activity;
 import android.app.ActivityManager;
+import android.app.KeyguardManager;
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
 import android.os.Build;
+import android.os.PowerManager;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 
+import com.google.gson.Gson;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Scanner;
+import java.util.Set;
 
 import static android.content.Context.ACTIVITY_SERVICE;
 
@@ -29,8 +42,9 @@ public class ServiceThread implements Runnable {
     private String uiInfo;
 
     // Maps For Data Collected
-    private HashMap<String, String> obajectValuesMap = new HashMap<> ();
+    private HashMap<String, String> objectValuesMap = new HashMap<> ();
     private HashMap<String, String> logTagsMap = new HashMap<> ();
+    private HashMap<String, String> intentsMap = new HashMap<> ();
 
     // Maps fot Methods and UI
     private HashMap<String, String> viewMap = new HashMap<> ();
@@ -49,7 +63,10 @@ public class ServiceThread implements Runnable {
 
         // First Step get Device Info & UI Info
         deviceInfo = getDeviceInfo ();
-        uiInfo = getUI ();
+
+        if (Configuration.UI_INFO) {
+            uiInfo = getUI ();
+        }
 
 
         while (true) {
@@ -61,19 +78,66 @@ public class ServiceThread implements Runnable {
                 // set DeviceInfo
                 req.setDeviceInfo (deviceInfo);
 
+                // set uiInfo
+                if (Configuration.UI_INFO) {
+                    req.setUiInfo (uiInfo);
+                }
+
                 // set LOGS
                 if (Configuration.EXTRACT_FULL_LOGS) {
-
                     req.setLog (getLogs ());
                 } else if (Configuration.EXTRACT_FULL_LOGS_AND_FILTER_THEM){
-
                     req.setLog (filterLogs ());
-                    req.setLogTags (logTagsMap);
+                    req.setLogTagsMap (logTagsMap);
+                }
+
+                // CPU
+                if (Configuration.CPU_USAGE) {
+                    req.setCpuUsage (getCPU ());
+                }
+
+                // RAM
+                if (Configuration.RAM_USAGE) {
+                    req.setRamUsage (getRAM ());
+                }
+
+                // HEAP
+                if (Configuration.HEAP_USAGE) {
+                    req.setHeapUsage (getHeap ());
+                }
+
+                // Set Maps
+                if (!objectValuesMap.isEmpty ()) {
+                    req.setObjectValuesMap (objectValuesMap);
+                }
+                if (!intentsMap.isEmpty ()) {
+                    req.setIntentsMap (intentsMap);
+                }
+                if (!viewMap.isEmpty ()) {
+                    req.setViewMap (viewMap);
+                }
+                if (!methodsMap.isEmpty ()) {
+                    req.setMethodsMap (methodsMap);
+                }
+                if (!touchMethodsMap.isEmpty ()) {
+                    req.setTouchMethodsMap (touchMethodsMap);
+                }
+                if (!methodsAndViewMap.isEmpty ()) {
+                    req.setMethodsAndViewMap (methodsAndViewMap);
+                }
+
+                // Send DATA
+                try {
+                    sendData (req);
+                } catch (IOException e) {
+                    e.printStackTrace ();
                 }
 
                 try {
-                    Thread.sleep (30000);
+
+                    Thread.sleep (Configuration.INTERVAL);
                     System.out.println ("TIMEOUT END");
+
                 } catch (InterruptedException e) {
                     e.printStackTrace ();
                 }
@@ -96,11 +160,27 @@ public class ServiceThread implements Runnable {
         this.viewMap = viewMap;
     }
 
+
     public boolean isPhoneLocked() {
-        return false;
+        boolean isLocked = false;
+
+        // First we check the locked state
+        KeyguardManager keyguardManager = (KeyguardManager) context.getSystemService(Context.KEYGUARD_SERVICE);
+        boolean inKeyguardRestrictedInputMode = keyguardManager.inKeyguardRestrictedInputMode();
+
+        if (inKeyguardRestrictedInputMode) {
+            isLocked = true;
+
+        } else {
+            // If password is not set in the settings, the inKeyguardRestrictedInputMode() returns false,
+            // so we need to check if screen on for this case
+
+            PowerManager powerManager = (PowerManager)context.getSystemService(Context.POWER_SERVICE);
+            isLocked = !powerManager.isInteractive();
+
+        }
+        return isLocked;
     }
-
-
 
 
     // Get View info, when fragments or other things inside an activity changes
@@ -119,21 +199,39 @@ public class ServiceThread implements Runnable {
     // Report Object Value with tag/class
     public void reportObjectVal(String tag, String o) {
 
-        obajectValuesMap.put (tag, o);
+        objectValuesMap.put (tag, o);
         System.out.print (o);
     }
 
 
-    public void calledMethod(String tag, String method) {
-        methodsMap.put (tag, method);
-        methodsAndViewMap.put (tag, method);
+    public void calledMethod(String tag, String methodData) {
+
+        String tagValue = tag;
+        for (int i = 1; !methodsMap.containsKey (tagValue) ; i++) {
+            tagValue = tag + i;
+        }
+
+        String timestamp = "\n\n Timestamp : " + new Date().toString ();
+
+        methodsMap.put (tag, methodData + timestamp);
+        methodsAndViewMap.put (tag, methodData + timestamp);
+    }
+    public void calledMethod(String tag) {
+        calledMethod (tag, "");
     }
 
-
     public void calledTouchMethod(String tag, String method) {
-        touchMethodsMap.put (tag, method);
-        methodsMap.put (tag, method);
-        methodsAndViewMap.put (tag, method);
+
+        String tagValue = tag;
+        for (int i = 1; !methodsMap.containsKey (tagValue) ; i++) {
+            tagValue = tag + i;
+        }
+
+        String timestamp = "\n\n Timestamp : " + new Date().toString ();
+
+        touchMethodsMap.put (tagValue, method + timestamp);
+        methodsMap.put (tagValue, method + timestamp);
+        methodsAndViewMap.put (tagValue, method + timestamp);
     }
 
 
@@ -161,8 +259,9 @@ public class ServiceThread implements Runnable {
     }
 
 
-    // TODO
+
     private String getCPU() {
+
         try {
             java.lang.Process process = Runtime.getRuntime().exec("ps");
             BufferedReader reader = new BufferedReader(
@@ -195,19 +294,16 @@ public class ServiceThread implements Runnable {
         return null;
     }
 
+    private String getRAM() {
 
-    // TODO
-    private void getRAM() {
-        String test = ("Total RAM : "+(float)Math.round (getAvailableMemory().totalMem/1048576/100)/10+" GB\n"
+        String content = ("Total RAM : "+(float)Math.round (getAvailableMemory().totalMem/1048576/100)/10+" GB\n"
                 +"Available RAM : "+(float)Math.round (getAvailableMemory().availMem/1048576)/1000+" GB\n"
                 +"LowMemory RAM : " +getAvailableMemory ().lowMemory +"\n"
                 +"Threshold RAM : "+(float)Math.round (getAvailableMemory().threshold/1048576)/1000+" GB\n");
 
-        // TODO : LOGS
-        Log.e ("RAM", test);
+        return content;
 
     }
-    // TODO : get usedRAM
     // Get a MemoryInfo object for the device's current memory status.
     private ActivityManager.MemoryInfo getAvailableMemory() {
         ActivityManager activityManager = (ActivityManager) context.getSystemService(ACTIVITY_SERVICE);
@@ -216,19 +312,17 @@ public class ServiceThread implements Runnable {
         return memoryInfo;
     }
 
+    private String getHeap() {
 
-    // TODO
-    private void getHeap() {
         final Runtime runtime = Runtime.getRuntime();
         final long usedMemInMB=(runtime.totalMemory() - runtime.freeMemory()) / 1048576L;
         final long maxHeapSizeInMB=runtime.maxMemory() / 1048576L;
         final long availHeapSizeInMB = maxHeapSizeInMB - usedMemInMB;
-        String test = ("Available HEAP : " + (float)availHeapSizeInMB/1000 +" GB\n"
+        String content = ("Available HEAP : " + (float)availHeapSizeInMB/1000 +" GB\n"
                 +"Used HEAP : " + (float) usedMemInMB/1000 +" GB\n"
                 +"MaxAvailable HEAP : " + (float) maxHeapSizeInMB/1000 +" GB\n");
 
-        // TODO : LOG
-        Log.e ("HEAP", test);
+        return content;
     }
 
 
@@ -370,10 +464,57 @@ public class ServiceThread implements Runnable {
     }
 
 
+    // Get Broadcast Intents
+    private BroadcastReceiver mMessageReceiver = Configuration.GET_INTENTS ? new BroadcastReceiver () {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String key = extractKey (intent);
 
-    // TODO
-    private void getIntents() {
+            for (String s : Configuration.getIntentFilters ()) {
 
-        // TODO : build a Broadcast Receiver
+                if (key.equals (s)) {
+
+                    String content = ("Action : " + intent.getAction () + "\n"
+                            + "Component : " + intent.getComponent ().getClassName () + "\n"
+                            + "Type : " + intent.getType () + "\n"
+                            + "DataString : " + intent.getDataString () + "\n"
+                            + "SerializableExtra : " + intent.getSerializableExtra (s).toString () + "\n"
+                            + "BundleExtra : " + intent.getBundleExtra (s).toString () + "\n"
+                            + "\nTimestamp : " + new Date().toString ());
+
+                    String filter = s;
+                    for (int i = 1; !intentsMap.containsKey (filter) ; i++) {
+                        filter = s + i;
+                    }
+
+                    intentsMap.put (filter, content);
+                }
+            }
+        }
+    } : null;
+
+    private String extractKey(Intent intent){
+        Set<String> keySet = Objects.requireNonNull(intent.getExtras()).keySet();
+        Iterator iterator = keySet.iterator();
+        return (String)iterator.next();
+    }
+
+
+    // Send POST request
+    private void sendData(PayloadRequest req) throws IOException {
+
+        URL url = new URL (Configuration.URL);
+        HttpURLConnection con = (HttpURLConnection) url.openConnection ();
+        con.setRequestMethod ("POST");
+
+        con.setDoOutput (true);
+
+        Gson gson = new Gson ();
+        String content = gson.toJson (req);
+
+        try(OutputStream os = con.getOutputStream ()) {
+            os.write (content.getBytes ());
+            os.flush ();
+        }
     }
 }
