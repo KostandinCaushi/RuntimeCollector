@@ -158,19 +158,32 @@ public class ServiceThread implements Runnable {
         }
     }
 
+    public Configuration getConfiguration() {
+        return configuration;
+    }
+
+    public void setConfiguration(Configuration configuration) {
+        this.configuration = configuration;
+    }
 
     public void setContext(Context context) {
 
         this.context = context;
-
-        getView (context.getClass ().toString ());
-
-        System.out.println ("Context set to ServiceThread");
     }
 
-    public void setViewMap(HashMap<String, String> viewMap) {
+    public void loadSharedPreferences() {
+        File prefsdir = new File(context.getApplicationInfo().dataDir,"shared_prefs");
 
-        this.viewMap = viewMap;
+        if(prefsdir.exists() && prefsdir.isDirectory()) {
+            String[] list = prefsdir.list ();
+
+            for (String s : list) {
+                //remove .xml from the file name
+                String preffile = s.substring (0, s.length () - 4);
+                SharedPreferences sp = context.getSharedPreferences (preffile, MODE_PRIVATE);
+                preferences.put (preffile, sp.getAll ());
+            }
+        }
     }
 
     public boolean isPhoneLocked() {
