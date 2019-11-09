@@ -12,13 +12,13 @@ public class Configuration {
     // SharedPreferences
     public static final String GET_PREFERENCES = "getPreferences";
     // CPU Usage
-    public static final String GET_CPU_USAGE = "cpuUsage";
+    public static final String GET_CPU_USAGE = "getCpuUsage";
     // RAM Usage
-    public static final String GET_RAM_USAGE = "ramUsage";
+    public static final String GET_RAM_USAGE = "getRamUsage";
     // HEAP Usage
-    public static final String GET_HEAP_USAGE = "heapUsage";
+    public static final String GET_HEAP_USAGE = "getHeapUsage";
     // UI Info
-    public static final String GET_UI_INFO = "uiInfo";
+    public static final String GET_UI_INFO = "getUiInfo";
     public static final String GET_VIEW = "getView";
     // Methods
     public static final String GET_METHODS = "getMethods";
