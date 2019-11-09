@@ -74,17 +74,29 @@ public class ServiceThread implements Runnable {
     @Override
     public void run() {
 
-        // First Step get Device Info & UI Info
+        try {
+            Thread.sleep (10000);
+        } catch (InterruptedException e) {
+            e.printStackTrace ();
+        }
+
+        // Step 1 : get Device Info
         deviceInfo = getDeviceInfo ();
 
-        if (Configuration.UI_INFO) {
+        // Step 2 : get all sharedPreferences
+        if (Boolean.parseBoolean (configuration.getConfigurations().get (Configuration.GET_PREFERENCES))) {
+            loadSharedPreferences();
+        }
+
+        // Step 3 : get UI info
+        if (Boolean.parseBoolean (configuration.getConfigurations().get (Configuration.GET_UI_INFO))) {
             uiInfo = getUI ();
         }
 
 
         while (true) {
 
-            while (isPhoneLocked ()) {
+            while (context != null && isPhoneLocked ()) {
 
                 PayloadRequest req = new PayloadRequest ();
 
@@ -92,30 +104,33 @@ public class ServiceThread implements Runnable {
                 req.setDeviceInfo (deviceInfo);
 
                 // set uiInfo
-                if (Configuration.UI_INFO) {
+                if (Boolean.parseBoolean (configuration.getConfigurations().get (Configuration.GET_UI_INFO))) {
                     req.setUiInfo (uiInfo);
                 }
 
+                // set preferences
+                if (Boolean.parseBoolean (configuration.getConfigurations().get (Configuration.GET_PREFERENCES))) {
+                    req.setPreferences (preferences);
+                }
+
                 // set LOGS
-                if (Configuration.EXTRACT_FULL_LOGS) {
+                if (Boolean.parseBoolean (configuration.getConfigurations().get (Configuration.GET_LOGS))) {
                     req.setLog (getLogs ());
-                } else if (Configuration.EXTRACT_FULL_LOGS_AND_FILTER_THEM){
-                    req.setLog (filterLogs ());
                     req.setLogTagsMap (logTagsMap);
                 }
 
                 // CPU
-                if (Configuration.CPU_USAGE) {
+                if (Boolean.parseBoolean (configuration.getConfigurations().get (Configuration.GET_CPU_USAGE))) {
                     req.setCpuUsage (getCPU ());
                 }
 
                 // RAM
-                if (Configuration.RAM_USAGE) {
+                if (Boolean.parseBoolean (configuration.getConfigurations().get (Configuration.GET_RAM_USAGE))) {
                     req.setRamUsage (getRAM ());
                 }
 
                 // HEAP
-                if (Configuration.HEAP_USAGE) {
+                if (Boolean.parseBoolean (configuration.getConfigurations().get (Configuration.GET_HEAP_USAGE))) {
                     req.setHeapUsage (getHeap ());
                 }
 
@@ -128,15 +143,19 @@ public class ServiceThread implements Runnable {
                 }
                 if (!viewMap.isEmpty ()) {
                     req.setViewMap (viewMap);
+                    saveViewMap ();
+                }
+                if (!methodsAndViewFlow.isEmpty ()) {
+                    req.setMethodsAndViewFlow (methodsAndViewFlow);
+                }
+                if (!viewFlow.isEmpty ()) {
+                    req.setViewFlow (viewFlow);
                 }
                 if (!methodsMap.isEmpty ()) {
                     req.setMethodsMap (methodsMap);
                 }
                 if (!touchMethodsMap.isEmpty ()) {
                     req.setTouchMethodsMap (touchMethodsMap);
-                }
-                if (!methodsAndViewMap.isEmpty ()) {
-                    req.setMethodsAndViewMap (methodsAndViewMap);
                 }
 
                 // Send DATA
@@ -146,9 +165,22 @@ public class ServiceThread implements Runnable {
                     e.printStackTrace ();
                 }
 
+
+                // Clear all Maps
+                touchMethodsMap.clear ();
+                methodsMap.clear ();
+                viewFlow.clear ();
+                methodsAndViewFlow.clear ();
+                viewMap.clear ();
+                intentsMap.clear ();
+                objectValuesMap.clear ();
+                logTagsMap.clear ();
+
+
+
                 try {
 
-                    Thread.sleep (Configuration.INTERVAL);
+                    Thread.sleep (Integer.parseInt (configuration.getConfigurations().get (Configuration.INTERVAL)));
                     System.out.println ("TIMEOUT END");
 
                 } catch (InterruptedException e) {
