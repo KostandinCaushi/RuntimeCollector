@@ -9,8 +9,18 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import com.kostandin.caushi.runtimecollector.R;
+import com.kostandin.caushi.runtimecollector.service.RuntimeService;
+import com.kostandin.caushi.runtimecollector.service.for_ui.RuntimeFragment;
 
-public class Fragment2 extends Fragment {
+public class Fragment2 extends RuntimeFragment {
+
+
+    public Fragment2() {}
+
+    public Fragment2(RuntimeService service) {
+        super (service);
+    }
+
 
     @Nullable
     @Override
@@ -18,6 +28,8 @@ public class Fragment2 extends Fragment {
 
         // Inflate the layout for this fragment
         View root = inflater.inflate(R.layout.fragment_2, container, false);
+
+        super.onCreateView (inflater, container, savedInstanceState);
 
         return root;
     }
