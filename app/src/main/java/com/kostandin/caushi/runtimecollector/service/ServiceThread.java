@@ -406,59 +406,41 @@ public class ServiceThread implements Runnable {
     }
 
 
-
     private void clearLogs() {
         try {
-            Runtime.getRuntime().exec(new String[]{"logcat", "-c"});
+            Runtime.getRuntime ().exec (new String[]{"logcat", "-c"});
+        } catch (IOException e) {
         }
-        catch (IOException e) {}
     }
+
     private String getLogs() {
         try {
-            java.lang.Process process = Runtime.getRuntime().exec("logcat -d");
-            BufferedReader bufferedReader = new BufferedReader(
-                    new InputStreamReader(process.getInputStream()));
+            java.lang.Process process = Runtime.getRuntime ().exec ("logcat -d");
+            BufferedReader bufferedReader = new BufferedReader (
+                    new InputStreamReader (process.getInputStream ()));
 
-            StringBuilder log=new StringBuilder();
-            String line = "";
-            while ((line = bufferedReader.readLine()) != null) {
-                log.append(line);
-            }
-
-            clearLogs ();
-            return (log.toString());
-        }
-        catch (IOException e) {}
-
-        return null;
-    }
-    private String filterLogs() {
-        try {
-            java.lang.Process process = Runtime.getRuntime().exec("logcat -d");
-            BufferedReader bufferedReader = new BufferedReader(
-                    new InputStreamReader(process.getInputStream()));
-
-            StringBuilder log=new StringBuilder();
+            StringBuilder log = new StringBuilder ();
             String line = "";
 
-            while ((line = bufferedReader.readLine()) != null) {
+            while ((line = bufferedReader.readLine ()) != null) {
 
                 log.append (line);
 
                 //CHECK YOUR TAG HERE
-                for (String s : Configuration.getLogsFilters ()) {
+                if (!configuration.getFilters ().isEmpty ()) {
+                    for (String s : configuration.getFilters ().get (Configuration.GET_LOG_FILTERS)) {
 
-                    if(line.contains(s)) {
+                        if (line.contains (s)) {
 
-                        logTagsMap.put (s, line);
+                            logTagsMap.put (s, line);
+                        }
                     }
                 }
             }
-
             clearLogs ();
-            return (log.toString());
+            return (log.toString ());
+        } catch (IOException e) {
         }
-        catch (IOException e) {}
 
         return null;
     }
