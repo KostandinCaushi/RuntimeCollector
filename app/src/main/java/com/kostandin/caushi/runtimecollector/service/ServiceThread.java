@@ -6,6 +6,7 @@ import android.app.KeyguardManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.PowerManager;
 import android.util.DisplayMetrics;
@@ -22,23 +23,28 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Scanner;
 import java.util.Set;
 
 import static android.content.Context.ACTIVITY_SERVICE;
+import static android.content.Context.MODE_PRIVATE;
 
 public class ServiceThread implements Runnable {
 
-    private MyService myService;
+    private RuntimeService runtimeService;
     private Context context;
+    private Configuration configuration;
 
-    // Utils
+    // Device Info
     private String deviceInfo;
+    private HashMap<String, Map<String, ?>> preferences = new HashMap<> ();
     private String uiInfo;
 
     // Maps For Data Collected
@@ -46,16 +52,23 @@ public class ServiceThread implements Runnable {
     private HashMap<String, String> logTagsMap = new HashMap<> ();
     private HashMap<String, String> intentsMap = new HashMap<> ();
 
-    // Maps fot Methods and UI
+    // UI
+    private final static String NOT_SUCCEED = "Not succeed";
+    private final static String VIEW_PREF = "viewFile";
+    private final static String VIEW_STRIN_MAP = "viewStrinMap";
     private HashMap<String, String> viewMap = new HashMap<> ();
-        // Contains also touchMethods
-    private HashMap<String, String> methodsMap = new HashMap<> ();
-    private HashMap<String, String> touchMethodsMap = new HashMap<> ();
-    private HashMap<String, String> methodsAndViewMap = new HashMap<> ();
+    private boolean savedNewView;
+    private List<String> viewFlow = new ArrayList<> ();
+
+    private List<String> methodsAndViewFlow = new ArrayList<> ();
+
+    // Methods
+    private HashMap<String, HashMap<String, String>> methodsMap = new HashMap<> ();         // Contains also touchMethods
+    private HashMap<String, HashMap<String, String>> touchMethodsMap = new HashMap<> ();
 
 
-    ServiceThread(MyService myService){
-        this.myService = myService;
+    ServiceThread(RuntimeService runtimeService) {
+        this.runtimeService = runtimeService;
     }
 
     @Override
@@ -204,86 +217,95 @@ public class ServiceThread implements Runnable {
     }
 
 
-    public void calledMethod(String tag, String methodData) {
+    public void calledMethod(String tag, HashMap<String, String> methodData) {
 
         String tagValue = tag;
-        for (int i = 1; !methodsMap.containsKey (tagValue) ; i++) {
+        int i;
+        for (i = 0; methodsMap.containsKey (tagValue); i++) {
             tagValue = tag + i;
         }
 
-        String timestamp = "\n\n Timestamp : " + new Date().toString ();
+        tagValue = tag + i;
 
-        methodsMap.put (tag, methodData + timestamp);
-        methodsAndViewMap.put (tag, methodData + timestamp);
-    }
-    public void calledMethod(String tag) {
-        calledMethod (tag, "");
+        String timestamp = new Date ().toString ();
+        methodData.put ("Timestamp", timestamp);
+
+        methodsMap.put (tagValue, methodData);
+        methodsAndViewFlow.add (tagValue);
+
+        Log.i (tag, methodData.toString ());
     }
 
-    public void calledTouchMethod(String tag, String method) {
+    public void calledTouchMethod(String tag, HashMap<String, String> methodData) {
 
         String tagValue = tag;
-        for (int i = 1; !methodsMap.containsKey (tagValue) ; i++) {
+        int i;
+        for (i = 0; methodsMap.containsKey (tagValue); i++) {
             tagValue = tag + i;
         }
 
-        String timestamp = "\n\n Timestamp : " + new Date().toString ();
+        tagValue = tag + i;
 
-        touchMethodsMap.put (tagValue, method + timestamp);
-        methodsMap.put (tagValue, method + timestamp);
-        methodsAndViewMap.put (tagValue, method + timestamp);
+        String timestamp = new Date ().toString ();
+        methodData.put ("Timestamp", timestamp);
+
+        touchMethodsMap.put (tagValue, methodData);
+        methodsMap.put (tagValue, methodData);
+        methodsAndViewFlow.add (tagValue);
+
+        Log.e (tag, methodData.toString ());
     }
 
 
     private String getDeviceInfo() {
 
-        String content = ("Brand : "+ Build.BRAND +"\n"
-                +"Model : "+ Build.MODEL+"\n"
-                +"Build num : "+ Build.DISPLAY+"\n"
-                +"CPU model : "+ getCpuInfoMap ().get ("model name")+"\n"
-                +"N° processors : " + Runtime.getRuntime ().availableProcessors () + "\n");
+        String content = ("Brand : " + Build.BRAND + "\n"
+                + "Model : " + Build.MODEL + "\n"
+                + "Build n° : " + Build.DISPLAY + "\n"
+                + "CPU model : " + getCpuInfoMap ().get (" model name") + "\n"
+                + "Processors n° : " + Runtime.getRuntime ().availableProcessors () + "\n");
 
         return content;
     }
     private Map<String, String> getCpuInfoMap() {
         Map<String, String> map = new HashMap<String, String> ();
         try {
-            Scanner s = new Scanner(new File ("/proc/cpuinfo"));
-            while (s.hasNextLine()) {
-                String[] vals = s.nextLine().split(": ");
-                if (vals.length > 1) map.put(vals[0].trim(), vals[1].trim());
+            Scanner s = new Scanner (new File ("/proc/cpuinfo"));
+            while (s.hasNextLine ()) {
+                String[] vals = s.nextLine ().split (": ");
+                if (vals.length > 1) map.put (vals[0].trim (), vals[1].trim ());
             }
         } catch (Exception e) {
-            Log.e("getCpuInfoMap",Log.getStackTraceString(e));}
+            Log.e ("getCpuInfoMap", Log.getStackTraceString (e));
+        }
         return map;
     }
-
 
 
     private String getCPU() {
 
         try {
-            java.lang.Process process = Runtime.getRuntime().exec("ps");
-            BufferedReader reader = new BufferedReader(
-                    new InputStreamReader(process.getInputStream()));
+            java.lang.Process process = Runtime.getRuntime ().exec ("ps");
+            BufferedReader reader = new BufferedReader (
+                    new InputStreamReader (process.getInputStream ()));
 
-            StringBuilder log = new StringBuilder();
+            StringBuilder log = new StringBuilder ();
             String line = "";
-            while ((line = reader.readLine()) != null) {
-                log.append(line);
+            while ((line = reader.readLine ()) != null) {
+                log.append (line);
             }
-            String content = (log.toString());
+            String content = (log.toString ());
 
-            java.lang.Process process2 = Runtime.getRuntime().exec("ps -eo %cpu");
-            BufferedReader reader2 = new BufferedReader(
-                    new InputStreamReader(process2.getInputStream()));
+            java.lang.Process process2 = Runtime.getRuntime ().exec ("ps -eo %cpu");
+            BufferedReader reader2 = new BufferedReader (
+                    new InputStreamReader (process2.getInputStream ()));
 
-            StringBuilder log2 = new StringBuilder();
+            StringBuilder log2 = new StringBuilder ();
             String line2 = "";
-            while ((line2 = reader2.readLine()) != null) {
-                log2.append(line2);
+            while ((line2 = reader2.readLine ()) != null) {
+                log2.append (line2);
             }
-            content = (content + "\n\n" + log2.toString());
+            content = (content + "\n\n" + log2.toString ());
 
             return content;
 
@@ -296,31 +318,31 @@ public class ServiceThread implements Runnable {
 
     private String getRAM() {
 
-        String content = ("Total RAM : "+(float)Math.round (getAvailableMemory().totalMem/1048576/100)/10+" GB\n"
-                +"Available RAM : "+(float)Math.round (getAvailableMemory().availMem/1048576)/1000+" GB\n"
-                +"LowMemory RAM : " +getAvailableMemory ().lowMemory +"\n"
-                +"Threshold RAM : "+(float)Math.round (getAvailableMemory().threshold/1048576)/1000+" GB\n");
+        String content = ("Total RAM : " + (float) Math.round (getAvailableMemory ().totalMem / 1048576 / 100) / 10 + " GB\n"
+                + "Available RAM : " + (float) Math.round (getAvailableMemory ().availMem / 1048576) / 1000 + " GB\n"
+                + "LowMemory RAM : " + getAvailableMemory ().lowMemory + "\n"
+                + "Threshold RAM : " + (float) Math.round (getAvailableMemory ().threshold / 1048576) / 1000 + " GB\n");
 
         return content;
 
     }
     // Get a MemoryInfo object for the device's current memory status.
     private ActivityManager.MemoryInfo getAvailableMemory() {
-        ActivityManager activityManager = (ActivityManager) context.getSystemService(ACTIVITY_SERVICE);
-        ActivityManager.MemoryInfo memoryInfo = new ActivityManager.MemoryInfo();
-        activityManager.getMemoryInfo(memoryInfo);
+        ActivityManager activityManager = (ActivityManager) context.getSystemService (ACTIVITY_SERVICE);
+        ActivityManager.MemoryInfo memoryInfo = new ActivityManager.MemoryInfo ();
+        activityManager.getMemoryInfo (memoryInfo);
         return memoryInfo;
     }
 
     private String getHeap() {
 
-        final Runtime runtime = Runtime.getRuntime();
-        final long usedMemInMB=(runtime.totalMemory() - runtime.freeMemory()) / 1048576L;
-        final long maxHeapSizeInMB=runtime.maxMemory() / 1048576L;
+        final Runtime runtime = Runtime.getRuntime ();
+        final long usedMemInMB = (runtime.totalMemory () - runtime.freeMemory ()) / 1048576L;
+        final long maxHeapSizeInMB = runtime.maxMemory () / 1048576L;
         final long availHeapSizeInMB = maxHeapSizeInMB - usedMemInMB;
-        String content = ("Available HEAP : " + (float)availHeapSizeInMB/1000 +" GB\n"
-                +"Used HEAP : " + (float) usedMemInMB/1000 +" GB\n"
-                +"MaxAvailable HEAP : " + (float) maxHeapSizeInMB/1000 +" GB\n");
+        String content = ("Available HEAP : " + (float) availHeapSizeInMB / 1000 + " GB\n"
+                + "Used HEAP : " + (float) usedMemInMB / 1000 + " GB\n"
+                + "MaxAvailable HEAP : " + (float) maxHeapSizeInMB / 1000 + " GB\n");
 
         return content;
     }
@@ -329,18 +351,18 @@ public class ServiceThread implements Runnable {
     // UI info : density, resolution
     private String getUI() {
         String content = (
-                "Density : " + context.getResources().getDisplayMetrics().density + " - " + getDensityName (context) + "\n"
+                "Density : " + context.getResources ().getDisplayMetrics ().density + " - " + getDensityName (context) + "\n"
                         + "Density Dpi : " + context.getResources ().getDisplayMetrics ().densityDpi + "\n"
                         + "Width : " + context.getResources ().getDisplayMetrics ().widthPixels + "px - "
-                        + context.getResources ().getDisplayMetrics ().widthPixels / context.getResources().getDisplayMetrics().density + "dp\n"
+                        + context.getResources ().getDisplayMetrics ().widthPixels / context.getResources ().getDisplayMetrics ().density + "dp\n"
                         + "Height : " + (context.getResources ().getDisplayMetrics ().heightPixels + getNavigationBarHeight ()) + "px - "
-                        + (context.getResources ().getDisplayMetrics ().heightPixels + getNavigationBarHeight ()) / context.getResources().getDisplayMetrics().density + "dp\n"
+                        + (context.getResources ().getDisplayMetrics ().heightPixels + getNavigationBarHeight ()) / context.getResources ().getDisplayMetrics ().density + "dp\n"
         );
 
         return content;
     }
     private static String getDensityName(Context context) {
-        float density = context.getResources().getDisplayMetrics().density;
+        float density = context.getResources ().getDisplayMetrics ().density;
         if (density >= 4.0) {
             return "xxxhdpi";
         }
@@ -360,10 +382,10 @@ public class ServiceThread implements Runnable {
     }
     private int getNavigationBarHeight() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-            DisplayMetrics metrics = new DisplayMetrics();
-            ((Activity)context).getWindowManager().getDefaultDisplay().getMetrics(metrics);
+            DisplayMetrics metrics = new DisplayMetrics ();
+            ((Activity) context).getWindowManager ().getDefaultDisplay ().getMetrics (metrics);
             int usableHeight = metrics.heightPixels;
-            ((Activity)context).getWindowManager().getDefaultDisplay().getRealMetrics(metrics);
+            ((Activity) context).getWindowManager ().getDefaultDisplay ().getRealMetrics (metrics);
             int realHeight = metrics.heightPixels;
             if (realHeight > usableHeight)
                 return realHeight - usableHeight;
@@ -374,13 +396,12 @@ public class ServiceThread implements Runnable {
     }
 
 
-
     private String viewInfo() {
 
         String output = "";
 
-        final ViewGroup parent = (ViewGroup) ((ViewGroup) ((Activity)context)
-                .findViewById(android.R.id.content)).getChildAt(0);
+        final ViewGroup parent = (ViewGroup) ((ViewGroup) ((Activity) context)
+                .findViewById (android.R.id.content)).getChildAt (0);
         showViewInfo (parent, output);
 
         return output;
@@ -388,16 +409,18 @@ public class ServiceThread implements Runnable {
     private void showViewInfo(View view, String output) {
         try {
             if (view.getId () != 0xffffffff)
-                output = (output +"id:" +view.getResources ().getResourceName (view.getId ())+"\n");
-        } catch (NullPointerException exception){}
+                output = (output + "id:" + view.getResources ().getResourceName (view.getId ()) + "\n");
+        } catch (NullPointerException exception) {
+        }
         try {
-            output = (output+"class:" + view.getClass ().toString () + "\n");
-        } catch (NullPointerException exception){}
-        output = (output+"x:" +
+            output = (output + "class:" + view.getClass ().toString () + "\n");
+        } catch (NullPointerException exception) {
+        }
+        output = (output + "x:" +
                 view.getX () + "\ny:" + view.getY () + "\nwidth:" + view.getWidth () +
-                "\nheight:" + view.getHeight ()+"\n\n");
+                "\nheight:" + view.getHeight () + "\n\n");
 
-        if((view instanceof ViewGroup)) {
+        if ((view instanceof ViewGroup)) {
             //find the children
             for (int i = 0; i < ((ViewGroup) view).getChildCount (); i++) {
                 showViewInfo (((ViewGroup) view).getChildAt (i), output);
