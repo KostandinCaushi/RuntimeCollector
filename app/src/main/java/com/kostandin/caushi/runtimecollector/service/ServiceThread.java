@@ -173,13 +173,12 @@ public class ServiceThread implements Runnable {
         this.viewMap = viewMap;
     }
 
-
     public boolean isPhoneLocked() {
         boolean isLocked = false;
 
         // First we check the locked state
-        KeyguardManager keyguardManager = (KeyguardManager) context.getSystemService(Context.KEYGUARD_SERVICE);
-        boolean inKeyguardRestrictedInputMode = keyguardManager.inKeyguardRestrictedInputMode();
+        KeyguardManager keyguardManager = (KeyguardManager) context.getSystemService (Context.KEYGUARD_SERVICE);
+        boolean inKeyguardRestrictedInputMode = keyguardManager.inKeyguardRestrictedInputMode ();
 
         if (inKeyguardRestrictedInputMode) {
             isLocked = true;
@@ -188,8 +187,8 @@ public class ServiceThread implements Runnable {
             // If password is not set in the settings, the inKeyguardRestrictedInputMode() returns false,
             // so we need to check if screen on for this case
 
-            PowerManager powerManager = (PowerManager)context.getSystemService(Context.POWER_SERVICE);
-            isLocked = !powerManager.isInteractive();
+            PowerManager powerManager = (PowerManager) context.getSystemService (Context.POWER_SERVICE);
+            isLocked = !powerManager.isInteractive ();
 
         }
         return isLocked;
@@ -200,12 +199,29 @@ public class ServiceThread implements Runnable {
     // the TAG = passed TAG string
     public void getView(String tag) {
 
-        if (viewMap != null && !viewMap.containsKey (tag)) {
-            viewMap.put (tag, viewInfo ());
-            methodsAndViewMap.put (tag, viewInfo ());
+        savedNewView = true;
+        viewMap.put (tag, viewInfo ());
+        methodsAndViewFlow.add (tag);
 
-            System.out.println ("Saved new view : " + tag);
+        System.out.println ("Saved new view : " + tag);
+    }
+
+
+    private void saveViewMap() {
+
+        SharedPreferences viewSharedPrefs = context.getSharedPreferences (VIEW_PREF, MODE_PRIVATE);
+
+        if (viewSharedPrefs != null) {
+            Gson gson = new Gson ();
+            String storedMapString = gson.toJson (viewMap);
+            SharedPreferences.Editor editor = viewSharedPrefs.edit ();
+            editor.putString (VIEW_STRIN_MAP, storedMapString);
+            editor.apply ();
         }
+
+        savedNewView = false;
+
+        System.out.println ("VIEW MAP SAVED");
     }
 
 
