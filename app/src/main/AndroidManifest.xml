@@ -2,7 +2,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.kostandin.caushi.runtimecollector">
 
-
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
@@ -19,7 +18,9 @@
         </activity>
         <activity android:name=".test.Activity1">
         </activity>
-        <service android:name=".service.MyService"/>
+
+        <service android:name=".service.RuntimeService"/>
+
     </application>
 
 </manifest>
