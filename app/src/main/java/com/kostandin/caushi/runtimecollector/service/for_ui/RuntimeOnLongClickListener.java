@@ -6,19 +6,19 @@ import com.kostandin.caushi.runtimecollector.service.RuntimeService;
 
 import java.util.HashMap;
 
-public class RuntimeOnLocgClickListener implements View.OnLongClickListener {
+public class RuntimeOnLongClickListener implements View.OnLongClickListener {
 
     private RuntimeService service;
     private String tag;
     private HashMap<String, String> methodData;
 
 
-    public RuntimeOnLocgClickListener(RuntimeService service, String tag) {
+    public RuntimeOnLongClickListener(RuntimeService service, String tag) {
         this.service = service;
         this.tag = tag;
     }
 
-    public RuntimeOnLocgClickListener(RuntimeService service, String tag, HashMap<String, String> methodData) {
+    public RuntimeOnLongClickListener(RuntimeService service, String tag, HashMap<String, String> methodData) {
         this.service = service;
         this.tag = tag;
         this.methodData = methodData;
