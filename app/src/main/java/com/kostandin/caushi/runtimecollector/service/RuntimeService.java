@@ -6,7 +6,6 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Binder;
 import android.os.IBinder;
-import android.util.Log;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -26,7 +25,6 @@ public class RuntimeService extends Service {
     private final static String NOT_SUCCEED = "Not succeed";
     private final static String VIEW_PREF = "viewFile";
     private final static String VIEW_STRIN_MAP = "viewStrinMap";
-    private HashMap<String, String> viewMap;
 
 
     private final IBinder myBinder = new LocalBinder();
@@ -46,12 +44,10 @@ public class RuntimeService extends Service {
 
         loadConfigurations();
 
-        loadViewMap ();
-
-        this.serviceThread = new ServiceThread (this);
+        this.serviceThread = new ServiceThread (this, configuration);
+        serviceThread.setContext (this);
         new Thread(serviceThread).start();
 
-        serviceThread.setConfiguration (configuration);
         return Service.START_STICKY;
     }
 
@@ -107,29 +103,6 @@ public class RuntimeService extends Service {
 
 
 
-    private void loadViewMap() {
-
-        if (Boolean.parseBoolean (configuration.getConfigurations ().get (Configuration.GET_VIEW))) {
-
-            SharedPreferences viewSharedPrefs = getSharedPreferences (VIEW_PREF, Context.MODE_PRIVATE);
-
-            if (viewSharedPrefs != null) {
-                Gson gson = new Gson ();
-                String storedMapString = viewSharedPrefs.getString (VIEW_STRIN_MAP, NOT_SUCCEED);
-                if (!storedMapString.equals (NOT_SUCCEED)) {
-                    viewMap = gson.fromJson (storedMapString, new TypeToken<HashMap<String, String>> () {
-                    }.getType ());
-                } else {
-                    viewMap = new HashMap<> ();
-                }
-            }
-
-            System.out.println ("VIEW MAP LOADED");
-        }
-    }
-
-
-
     // Set Context when activity changes
     public void setCurrentContext(Context currentContext) {
         this.currentContext = currentContext;
@@ -142,13 +115,7 @@ public class RuntimeService extends Service {
     public void getView(String tag) {
 
         if (Boolean.parseBoolean (configuration.getConfigurations ().get (Configuration.GET_VIEW))) {
-            if (viewMap != null && !viewMap.containsKey (tag)) {
-                serviceThread.getView (tag);
-                viewMap.put (tag, "");
-                return;
-            }
-
-            Log.e ("GetView", "View already taken & saved");
+            serviceThread.getView (tag);
         }
     }
 
