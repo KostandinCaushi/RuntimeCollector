@@ -59,6 +59,7 @@ public class ServiceThread implements Runnable {
     private final static String VIEW_PREF = "viewFile";
     private final static String VIEW_STRIN_MAP = "viewStrinMap";
     private HashMap<String, String> viewMap = new HashMap<> ();
+    private HashMap<String, String> newViewMap = new HashMap<> ();
     private boolean savedNewView;
     private List<String> viewFlow = new ArrayList<> ();
 
@@ -187,8 +188,8 @@ public class ServiceThread implements Runnable {
                 if (!intentsMap.isEmpty ()) {
                     req.setIntentsMap (intentsMap);
                 }
-                if (!viewMap.isEmpty ()) {
-                    req.setViewMap (viewMap);
+                if (savedNewView) {
+                    req.setViewMap (newViewMap);
                     saveViewMap ();
                 }
                 if (!methodsAndViewFlow.isEmpty ()) {
@@ -217,7 +218,7 @@ public class ServiceThread implements Runnable {
                 methodsMap.clear ();
                 viewFlow.clear ();
                 methodsAndViewFlow.clear ();
-                viewMap.clear ();
+                newViewMap.clear ();
                 intentsMap.clear ();
                 objectValuesMap.clear ();
                 logTagsMap.clear ();
@@ -264,6 +265,27 @@ public class ServiceThread implements Runnable {
         }
     }
 
+    private void loadViewMap() {
+
+        if (Boolean.parseBoolean (configuration.getConfigurations ().get (Configuration.GET_VIEW))) {
+
+            SharedPreferences viewSharedPrefs = context.getSharedPreferences (VIEW_PREF, Context.MODE_PRIVATE);
+
+            if (viewSharedPrefs != null) {
+                Gson gson = new Gson ();
+                String storedMapString = viewSharedPrefs.getString (VIEW_STRIN_MAP, NOT_SUCCEED);
+                if (!storedMapString.equals (NOT_SUCCEED)) {
+                    viewMap = gson.fromJson (storedMapString, new TypeToken<HashMap<String, String>> () {
+                    }.getType ());
+                } else {
+                    viewMap = new HashMap<> ();
+                }
+            }
+
+            System.out.println ("VIEW MAP LOADED");
+        }
+    }
+
     public boolean isPhoneLocked() {
         boolean isLocked = false;
 
@@ -290,11 +312,20 @@ public class ServiceThread implements Runnable {
     // the TAG = passed TAG string
     public void getView(String tag) {
 
-        savedNewView = true;
-        viewMap.put (tag, viewInfo ());
-        methodsAndViewFlow.add (tag);
+        if (Boolean.parseBoolean (configuration.getConfigurations ().get (Configuration.GET_VIEW))) {
+            if (viewMap != null && !viewMap.containsKey (tag)) {
+                savedNewView = true;
+                viewMap.put (tag, viewInfo ());
+                newViewMap.put (tag, viewMap.get (tag));
+                viewFlow.add (tag);
+                methodsAndViewFlow.add (tag);
 
-        System.out.println ("Saved new view : " + tag);
+                System.out.println ("Saved new view : " + tag);
+            } else {
+                viewFlow.add (tag);
+                methodsAndViewFlow.add (tag);
+            }
+        }
     }
 
 
@@ -369,7 +400,7 @@ public class ServiceThread implements Runnable {
         String content = ("Brand : " + Build.BRAND + "\n"
                 + "Model : " + Build.MODEL + "\n"
                 + "Build n° : " + Build.DISPLAY + "\n"
-                + "CPU model : " + getCpuInfoMap ().get (" model name") + "\n"
+                + "CPU model : " + getCpuInfoMap ().get ("model name") + "\n"
                 + "Processors n° : " + Runtime.getRuntime ().availableProcessors () + "\n");
 
         return content;
@@ -505,15 +536,15 @@ public class ServiceThread implements Runnable {
 
     private String viewInfo() {
 
-        String output = "";
-
         final ViewGroup parent = (ViewGroup) ((ViewGroup) ((Activity) context)
                 .findViewById (android.R.id.content)).getChildAt (0);
-        showViewInfo (parent, output);
+        String output = showViewInfo (parent);
 
         return output;
     }
-    private void showViewInfo(View view, String output) {
+    private String showViewInfo(View view) {
+
+        String output = "";
         try {
             if (view.getId () != 0xffffffff)
                 output = (output + "id:" + view.getResources ().getResourceName (view.getId ()) + "\n");
@@ -530,9 +561,10 @@ public class ServiceThread implements Runnable {
         if ((view instanceof ViewGroup)) {
             //find the children
             for (int i = 0; i < ((ViewGroup) view).getChildCount (); i++) {
-                showViewInfo (((ViewGroup) view).getChildAt (i), output);
+                output = output + showViewInfo (((ViewGroup) view).getChildAt (i));
             }
         }
+        return output;
     }
 
 
@@ -558,7 +590,7 @@ public class ServiceThread implements Runnable {
 
                 //CHECK YOUR TAG HERE
                 if (!configuration.getFilters ().isEmpty ()) {
-                    for (String s : configuration.getFilters ().get (Configuration.GET_LOG_FILTERS)) {
+                    for (String s : configuration.getFilters ().get (Configuration.LOG_FILTERS)) {
 
                         if (line.contains (s)) {
 
