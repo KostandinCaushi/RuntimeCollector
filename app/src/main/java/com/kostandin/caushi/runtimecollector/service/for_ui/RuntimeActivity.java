@@ -34,7 +34,7 @@ public class RuntimeActivity extends AppCompatActivity {
         }
     };
 
-    protected void doBindService() {
+    public void doLinkService() {
         bindService(new Intent (this, RuntimeService.class), mConnection,
                 Context.BIND_AUTO_CREATE);
 
@@ -44,7 +44,7 @@ public class RuntimeActivity extends AppCompatActivity {
             public void run() {
                 runtimeService.setCurrentContext (_context);
             }
-        }, 1000);
+        }, 2000);
     }
 
     protected void doUnbindService() {
@@ -59,7 +59,7 @@ public class RuntimeActivity extends AppCompatActivity {
         _context = this;
 
         // Start Service
-        if (!isMyServiceRunning (RuntimeService.class)){
+        if (!isRuntimeServiceRunning (RuntimeService.class)){
             startService(new Intent(this, RuntimeService.class));
         }
     }
@@ -67,7 +67,7 @@ public class RuntimeActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume ();
-        doBindService ();
+        doLinkService ();
     }
 
 
@@ -78,7 +78,7 @@ public class RuntimeActivity extends AppCompatActivity {
     }
 
 
-    private boolean isMyServiceRunning(Class<?> serviceClass) {
+    private boolean isRuntimeServiceRunning(Class<?> serviceClass) {
         ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
         for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
             if (serviceClass.getName().equals(service.service.getClassName())) {
