@@ -6,6 +6,7 @@ import android.app.KeyguardManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.PowerManager;
@@ -15,6 +16,7 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -67,12 +69,53 @@ public class ServiceThread implements Runnable {
     private HashMap<String, HashMap<String, String>> touchMethodsMap = new HashMap<> ();
 
 
-    ServiceThread(RuntimeService runtimeService) {
+    ServiceThread(RuntimeService runtimeService, Configuration configuration) {
         this.runtimeService = runtimeService;
+        this.configuration = configuration;
     }
 
     @Override
     public void run() {
+
+        // Initialize Broadcast Receiver
+        if (Boolean.parseBoolean (configuration.getConfigurations ().get (configuration.GET_INTENTS))) {
+            mMessageReceiver = new BroadcastReceiver () {
+                @Override
+                public void onReceive(Context context, Intent intent) {
+                    String key = extractKey (intent);
+
+                    if (!configuration.getFilters ().isEmpty ()) {
+                        for (String s : configuration.getFilters ().get (Configuration.INTENT_FILTERS)) {
+
+                            if (key.equals (s)) {
+
+                                String content = ("Action : " + intent.getAction () + "\n"
+                                        + "Component : " + (intent.getComponent () != null ? intent.getComponent ().getClassName () : "") + "\n"
+                                        + "Type : " + intent.getType () + "\n"
+                                        + "DataString : " + intent.getDataString () + "\n"
+                                        + "SerializableExtra : " + getOutputSerizlizableExtra (intent, s) + "\n"
+                                        + "BundleExtra : " + (intent.getBundleExtra (s) != null ? intent.getBundleExtra (s).toString () : "") + "\n"
+                                        + "\nTimestamp : " + new Date ().toString ());
+
+                                String filter = s;
+                                for (int i = 1; intentsMap.containsKey (filter); i++) {
+                                    filter = s + i;
+                                }
+
+                                intentsMap.put (filter, content);
+                            }
+                        }
+                    }
+                }
+            };
+
+            // Register Receiver Filters
+            if (configuration.getFilters ().get (configuration.INTENT_FILTERS) != null &&
+                    !configuration.getFilters ().get (configuration.INTENT_FILTERS).isEmpty ())
+                for (String s : configuration.getFilters ().get (configuration.INTENT_FILTERS)) {
+                    context.registerReceiver(mMessageReceiver, new IntentFilter (s));
+                }
+        }
 
         try {
             Thread.sleep (10000);
@@ -92,6 +135,9 @@ public class ServiceThread implements Runnable {
         if (Boolean.parseBoolean (configuration.getConfigurations().get (Configuration.GET_UI_INFO))) {
             uiInfo = getUI ();
         }
+
+        // Step 4 : load viewMap from SharedPreferences
+        loadViewMap ();
 
 
         while (true) {
@@ -531,39 +577,23 @@ public class ServiceThread implements Runnable {
 
 
     // Get Broadcast Intents
-    private BroadcastReceiver mMessageReceiver = Boolean.parseBoolean (configuration.GET_INTENTS) ? new BroadcastReceiver () {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            String key = extractKey (intent);
+    private BroadcastReceiver mMessageReceiver;
 
-            if (!configuration.getFilters ().isEmpty ()) {
-                for (String s : configuration.getFilters ().get (Configuration.GET_INTENTS)) {
-
-                    if (key.equals (s)) {
-
-                        String content = ("Action : " + intent.getAction () + "\n"
-                                + "Component : " + intent.getComponent ().getClassName () + "\n"
-                                + "Type : " + intent.getType () + "\n"
-                                + "DataString : " + intent.getDataString () + "\n"
-                                + "SerializableExtra : " + intent.getSerializableExtra (s).toString () + "\n"
-                                + "BundleExtra : " + intent.getBundleExtra (s).toString () + "\n"
-                                + "\nTimestamp : " + new Date ().toString ());
-
-                        String filter = s;
-                        for (int i = 1; !intentsMap.containsKey (filter); i++) {
-                            filter = s + i;
-                        }
-
-                        intentsMap.put (filter, content);
-                    }
-                }
-            }
-        }
-    } : null;
     private String extractKey(Intent intent) {
         Set<String> keySet = Objects.requireNonNull (intent.getExtras ()).keySet ();
         Iterator iterator = keySet.iterator ();
         return (String) iterator.next ();
+    }
+    private String getOutputSerizlizableExtra(Intent intent, String name) {
+        if (intent.getSerializableExtra (name) != null) {
+            return intent.getSerializableExtra (name).toString ();
+        } else if (intent.getStringExtra (name) != null) {
+            return intent.getStringExtra (name);
+        } else if (intent.getIntExtra (name, -1) != -1) {
+            return String.valueOf (intent.getIntExtra (name, -1));
+        } else {
+            return String.valueOf (intent.getBooleanExtra (name, false));
+        }
     }
 
 
@@ -583,5 +613,9 @@ public class ServiceThread implements Runnable {
             os.write (content.getBytes ());
             os.flush ();
         }
+
+
+        // Can add checks on ResponseCode
+//        int responseCode = con.getResponseCode ();
     }
 }
