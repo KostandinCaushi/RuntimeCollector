@@ -27,27 +27,28 @@ public class Configuration {
     public static final String GET_OBJ_VALUES = "getObjValues";
     // Logs
     public static final String GET_LOGS = "getLogs";
-    public static final String GET_LOG_FILTERS = "getLogFilters";
+    public static final String LOG_FILTERS = "LogFilters";
     // Intents
     public static final String GET_INTENTS = "getIntents";
+    public static final String INTENT_FILTERS = "IntentFilters";
     // REST call data
     public static final String URL = "url";
 
 
 
     public HashMap<String, String> configurations = new HashMap<String, String>() {{
-        put (INTERVAL,"30");
-        put (GET_PREFERENCES, "true");
+        put (INTERVAL,"1800");
+        put (GET_PREFERENCES, "false");
         put (GET_CPU_USAGE, "false");
-        put (GET_RAM_USAGE, "true");
+        put (GET_RAM_USAGE, "false");
         put (GET_HEAP_USAGE, "false");
         put (GET_UI_INFO, "true");
-        put (GET_VIEW, "true");
+        put (GET_VIEW, "false");
         put (GET_METHODS, "false");
         put (GET_TOUCH_METHODS, "false");
         put (GET_OBJ_VALUES, "false");
         put (GET_LOGS, "false");
-        put (GET_INTENTS, "false");
+        put (GET_INTENTS, "true");
         put (URL, "www.url.com:8989");
     }};
 
@@ -56,12 +57,12 @@ public class Configuration {
         // Logs
         List<String> logFilters = new ArrayList<> ();
 //        logFilters.add ("something");
-        put (GET_LOG_FILTERS, logFilters);
+        put (LOG_FILTERS, logFilters);
 
         // Intents
         List<String> intentFilters = new ArrayList<> ();
-//        intentFilters.add ("something");
-        put (GET_INTENTS, intentFilters);
+        intentFilters.add ("PIPPO");
+        put (INTENT_FILTERS, intentFilters);
     }};
 
 
