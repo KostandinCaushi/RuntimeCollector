@@ -38,10 +38,12 @@ public class MainActivity extends RuntimeActivity {
             public void run() {
                 info_bt.setOnClickListener (new RuntimeOnClickListener(runtimeService,"TAG1", dataForBt) {
 
+                    @Override
                     public void onClick(View v) {
                         super.onClick (info_bt);
 
                         // rest of the code
+                        System.out.print ("PIPPO");
                     }
                 });
             }
@@ -52,5 +54,12 @@ public class MainActivity extends RuntimeActivity {
     public void goToActivity1(View view) {
         Intent intent = new Intent (this, Activity1.class);
         startActivity (intent);
+    }
+
+    public void sendIntent(View view) {
+        Intent intent = new Intent ();
+        intent.setAction ("PIPPO");
+        intent.putExtra ("PIPPO", "ciao");
+        sendBroadcast (intent);
     }
 }

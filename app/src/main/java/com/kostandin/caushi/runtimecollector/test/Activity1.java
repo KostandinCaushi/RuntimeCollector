@@ -27,8 +27,9 @@ public class Activity1 extends RuntimeActivity {
             @Override
             public void run() {
                 // Set Fragment
-                fragment = new Fragment1 (runtimeService);
+                fragment = new Fragment1 ();
                 setFragment (fragment);
+                ((Fragment1)fragment).setService (runtimeService);
             }
         }, 1000);
     }
@@ -41,12 +42,14 @@ public class Activity1 extends RuntimeActivity {
     }
 
     public void setF1(View view) {
-        fragment = new Fragment1 (runtimeService);
+        fragment = new Fragment1 ();
         setFragment (fragment);
+        ((Fragment1)fragment).setService (runtimeService);
     }
 
     public void setF2(View view) {
-        fragment = new Fragment2 (runtimeService);
+        fragment = new Fragment2 ();
         setFragment (fragment);
+        ((Fragment2)fragment).setService (runtimeService);
     }
 }

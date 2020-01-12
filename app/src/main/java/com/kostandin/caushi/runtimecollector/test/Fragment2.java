@@ -14,14 +14,6 @@ import com.kostandin.caushi.runtimecollector.service.for_ui.RuntimeFragment;
 
 public class Fragment2 extends RuntimeFragment {
 
-
-    public Fragment2() {}
-
-    public Fragment2(RuntimeService service) {
-        super (service);
-    }
-
-
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
